@@ -37,11 +37,11 @@ if(T){
     
   dtStations<-
     fGetClimateStations(
-      country_name = ,
-      centre_lat_deg = median(dtSpecies$decimalLatitude),
-      centre_lon_deg = median(dtSpecies$decimalLongitude),
-      no_of_stations = 50,
-      use_country = F
+      country_name = "Brazil",
+      # centre_lat_deg = median(dtRawSpecies$decimalLatitude),
+      # centre_lon_deg = median(dtRawSpecies$decimalLongitude),
+      # no_of_stations = 50,
+      use_country = T
       )
   
   
@@ -57,12 +57,41 @@ if(T){
   
 }
 
+
+if(F){
+  library(ggplot2)
+  library(ggmap)
+  # Test Plot
+  qmplot(
+    data =
+      dtRawSpecies,
+    y = 
+      decimalLatitude,
+    x = 
+      decimalLongitude,
+    maptype = 
+      "terrain",
+    # "toner",
+    geom = 
+      "point",
+    col =
+    species,
+    # 'red',
+    size=
+      2,
+    alpha = 
+      0.7
+    # zoom = 1
+  )
+  
+}
+
 # ===========================Stitching is WIP===================================
 
 if(T){
   # Cleaning/subsetting the datasets, standardizing some names
   
-  dtRawSpecies<-dtRawSpecies[complete.cases(dtRawSpecies)]
+  # dtRawSpecies<-dtRawSpecies[complete.cases(dtRawSpecies)]
   
   dtSpecies<- 
     dtRawSpecies[,
@@ -74,14 +103,15 @@ if(T){
                    lon_deg = decimalLongitude,
                    gps_error_m = coordinateUncertaintyInMeters,
                    stateProvince,
-                   country,
+                   countryCode,
                    
                    year,
                    month,
                    day,
                    eventDate,
                    
-                   publishingCountry,
+                   # publishingCountry,
+                   stateProvince,
                    basisOfRecord,
                    recordedBy
                  )
@@ -117,8 +147,8 @@ if(T){
       lapply(
         1:nrow(dtSpecies),
         function(iRow){
-          # iRow = 14
-          print(iRow)
+          # iRow = 7
+          
           dtUniqueStations<- dtClimate[, .N, list( station_name, lat_deg, lon_deg)]
           dtTemp<-dtSpecies[iRow]
           
@@ -136,18 +166,62 @@ if(T){
                              )                 
           ]
           
-          setorder(dtUniqueStations, distance_m)
+          # setorder(dtUniqueStations, distance_m)
           
-          iTemp<- dtClimate[
-            station_name == 
-              dtUniqueStations[1,station_name] & 
-              year == dtTemp[, year] &
-              month == dtTemp[, month] & 
-              day == dtTemp[, day],
-            mean_air_temp_C
-          ][1]
+          distanceFromClosestStation_m<- dtUniqueStations[,min(distance_m,na.rm = T)]
           
-          dtTemp[,mean_air_temp_C := iTemp]
+          dtNearestStation<-
+            dtClimate[
+              station_name == 
+                dtUniqueStations[distance_m == distanceFromClosestStation_m, station_name]
+              ]
+          
+          
+          
+          dtNearestStation[,
+                           delta_days:=
+                             abs(as.numeric(
+                               as.Date(paste(year,month,day,sep = "-")) - 
+                                 as.Date(dtTemp$eventDate)
+                               ))
+                           ]
+          
+          setorder(dtNearestStation, delta_days)
+          
+          
+            
+          
+          iTemp<- 
+            dtNearestStation[ delta_days == min(delta_days,na.rm = T), mean_air_temp_C ]
+          
+          
+          
+          # if(length(iTemp)> 1){
+            cat(
+              "Row:",iRow,
+              " Temp:",iTemp,
+              " meanTemp:", mean(iTemp),
+              "days:",dtNearestStation[ delta_days == min(delta_days,na.rm = T),(delta_days) ],
+              "\n"
+            )  
+          # }
+          
+          # if(is.nan(iTemp)){
+          #   
+          #   cat(
+          #     "Row:",iRow,
+          #     "Needed:",dtTemp[, year],
+          #     "\n"
+          #   )  
+          #   
+          # }
+          
+          dtTemp[, last_temp_recorded_days:= dtNearestStation[ delta_days == min(delta_days,na.rm = T), mean(delta_days) ]]
+          dtTemp[,closest_station := dtNearestStation[1, station_name] ]
+          dtTemp[,distance_from_closest_station_km := distanceFromClosestStation_m/1000]
+          dtTemp[,station_lat_deg := dtNearestStation[1, lat_deg] ]
+          dtTemp[,station_lon_deg := dtNearestStation[1, lon_deg] ]
+          dtTemp[,mean_air_temp_C := mean(iTemp)]
           
           return(dtTemp)
           
@@ -167,11 +241,13 @@ library(googleCloudStorageR)
 
 bqr_auth(json_file = "molten-kit-354506-12dcdc7ea89a.json")
 
+dtResult[, stateProvince:= ifelse(stateProvince == "",NA,stateProvince)]
+
 bqr_upload_data(
   projectId = 'molten-kit-354506',
   datasetId =  "sample_gbif_climate",
-  tableId = 'sameple_test_upload',
-  upload_data = dtResult,
+  tableId = 'consolidated_UK_2O22',
+  upload_data = as.data.table(dtResult),
   create = 'CREATE_IF_NEEDED',
   wait = T,
   autodetect = T)

@@ -229,4 +229,68 @@ res<-
 gbif_photos(
   res
   # which='map'
+  
+  
 )
+
+# ================================================================================
+# 
+# Species lists and bounding boxes:
+#   
+#   years = [2021, 2022]
+# 
+# brazil_species = ['Chrysocyon brachyurus', 'Callithrix jacchus',
+#                   'Euphractus sexcinctus', 'Nasua nasua',
+#                   'Hydrochoerus hydrochaeris']
+# uk_species = ['Erinaceus roumanicus', 'Vulpes vulpes',
+#               'Phoca vitulina', 'Lutra lutra',
+#               'Branta canadensis']
+# Longitude:
+#   country	                                       min	    max
+# 0	Brazil	                      -72.87397	   -34.808346
+# 1	United Kingdom            -7.42667	      1.747407
+# 
+# Latitude:
+#   country	                        min	                  max
+# 0	Brazil	             -30.340799	-1.292262
+# 1	United Kingdom    50.025300	 60.789810
+
+
+
+# Reference:https://search.r-project.org/CRAN/refmans/rgbif/html/occ_download.html
+# https://data-blog.gbif.org/post/downloading-long-species-lists-on-gbif/
+  
+  
+uk_species = c('Erinaceus roumanicus', 'Vulpes vulpes','Phoca vitulina', 'Lutra lutra','Branta canadensis')
+gbif_taxon_keys <- uk_species %>% # use fewer names if you want to just test 
+  name_backbone_checklist()  %>% # match to backbone
+  filter(!matchType == "NONE") %>% # get matched names
+  pull(usagekey)
+
+brazil_species = c('Chrysocyon brachyurus', 'Callithrix jacchus','Euphractus sexcinctus', 'Nasua nasua','Hydrochoerus hydrochaeris')
+gbif_taxon_keys <- brazil_species %>% # use fewer names if you want to just test 
+  name_backbone_checklist() 
+  # filter(!matchType == "NONE") %>% # get matched names
+  # pull(usagekey)
+
+
+# gbif_taxon_keys<-gbif_taxon_keys
+
+x = occ_download(
+  user='riteshtekriwal',
+  pwd = '1235qwet',
+  email = 'tekritesh@gmail.com',
+  format = "SIMPLE_CSV",
+  pred_in("taxonKey", gbif_taxon_keys$usageKey),
+  # pred_in("hasCoordinate", TRUE),
+  pred_in("country", c("BR")),
+  pred_in("year", 2022)
+)
+
+
+x
+occ_download_wait(x[1])
+
+d <- occ_download_get(x[1]) %>%
+  occ_download_import()
+dtResults<- data.table(d)

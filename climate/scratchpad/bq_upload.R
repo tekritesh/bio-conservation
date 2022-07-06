@@ -22,11 +22,14 @@ bqr_auth(json_file = "molten-kit-354506-12dcdc7ea89a.json")
 bqr_upload_data(
   projectId = 'molten-kit-354506',
   datasetId =  "sample_gbif_climate",
-  tableId = 'sameple_test_upload',
-  upload_data = dtResult,
-  create = 'CREATE_IF_NEEDED',wait = T, autodetect = T)
+  tableId = 'uk_occ_download_2022',
+  upload_data = dtResults,
+  create = 'CREATE_IF_NEEDED',
+  wait = T,
+  autodetect = T
+  )
 
-bqr_upload_data(
+# bqr_upload_data(
   
   
   

@@ -104,6 +104,53 @@ if(F){
 }
 
 
+fGetSpeciesBulk<-function(
+  vSpeciesNames="",
+  countryName = "",
+  year = 2022,
+  username ="",
+  pass= "",
+  email =""
+  
+){
+  
+  require(data.table)
+  require(logger)
+  require(rgbif)
+  require(climate)
+  
+  # uk_species = c('Erinaceus roumanicus', 'Vulpes vulpes','Phoca vitulina', 'Lutra lutra','Branta canadensis')
+  gbif_taxon_keys <- vSpeciesNames %>% # use fewer names if you want to just test 
+    name_backbone_checklist()  
+  
+  log_info(
+    paste0("Running Bulk Download for:", vSpeciesNames," from location:", countryName)
+    )
+  
+  x = occ_download(
+    user=username,
+    pwd = pass,
+    email = email,
+    format = "SIMPLE_CSV",
+    pred_in("taxonKey", gbif_taxon_keys$usageKey),
+    pred_in("country", countryName),
+    pred_in("year", year)
+  )
+  
+  log_info(x)
+  
+  occ_download_wait(x[1])
+  
+  d <- occ_download_get(x[1]) %>%
+    occ_download_import()
+  
+  dtData<- data.table(d)
+  log_info("Recieved Rows:",nrow(dtData))
+  
+  return(dtData)
+}
+
+
 # =================================Get Climate Stations=========================
 #  Get nearest climate stations
 
@@ -187,7 +234,7 @@ if(F){
  
  dt<- 
    fGetClimateStations(
-     country_name = 'Brazil',
+     country_name = 'United+Kingdom',
      # centre_lon_deg = 4.951,
      # centre_lat_deg= 51.99,
      no_of_stations = 10000,
