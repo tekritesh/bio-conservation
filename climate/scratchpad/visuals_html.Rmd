@@ -1,0 +1,221 @@
+---
+title: "bio-visuals"
+author: "ritesh"
+date: "08/07/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(ggmap)
+library(data.table)
+library(leaflet)
+library(leaflet.extras)
+
+dtData<-
+  fread(
+    "/home/ritesh/Downloads/consolidated_data.csv"
+  )
+```
+
+## UK {.tabset .tabset-fade}
+
+### Leaflet 
+
+```{r all_occurences,warning=F, message=F,echo=F, fig.width= 8.5, fig.height=6}
+
+pal <- colorFactor(
+  palette = "Dark2",
+  domain = dtData$species
+)
+
+m <- leaflet(dtData) %>%
+  addTiles() %>%
+  addCircles(
+    lat = ~decimalLatitude,
+    lng = ~decimalLongitude,
+    radius = 1500,
+    opacity = 100,fill = T,
+    popup = paste(
+      paste('<b>Species:</b>',
+            dtData$species),
+      paste('<br><b>Occurence:</b>',
+            as.character(dtData$eventDate)
+            )
+      ),
+    color = ~pal(species),
+    group = 'dtData$species'
+      
+  ) %>%
+  addLegend(position = "bottomright",
+            values = ~species, # data frame column for legend
+            opacity = .7, # alpha of the legend
+            pal = pal, # palette declared earlier
+            title = "Species") %>%
+  addResetMapButton() %>%
+  addSearchFeatures(
+    targetGroups = 'dtData$species',
+    options = 
+      searchFeaturesOptions(zoom = 15,
+                            openPopup = TRUE,
+                            firstTipSubmit = TRUE,
+                            autoCollapse = TRUE,
+                            hideMarkerOnCollapse = TRUE)
+    )%>%
+  addMeasure(
+    position = 'bottomleft',
+    primaryLengthUnit = 'meters',
+    primaryAreaUnit = 'sqmeters',
+    activeColor = '#3D535D',
+    completedColor = '#7D4479') %>%
+  addControl("<P><b> Look for your Feces</b>
+  <br/>Search for Species.</P>",
+             position = 'topright')%>%
+  setView(lng = mean(dtData$decimalLongitude), lat = mean(dtData$decimalLatitude), zoom = 6)%>%
+    setMaxBounds(
+      lng1 = min(dtData$decimalLongitude),
+      lat1 = min(dtData$decimalLatitude),
+      lng2 = max(dtData$decimalLongitude),
+      lat2 = max(dtData$decimalLatitude) 
+      )
+
+m
+```
+
+```{r tempearute,warning=F, message=F,echo=F, fig.width= 8.5, fig.height=6}
+binpal <- 
+  colorNumeric(
+    "RdYlBu",
+    domain = range(dtData$mean_air_temp_C,na.rm = T))
+m<- 
+  leaflet(dtData) %>% 
+  # addProviderTiles("CartoDB.DarkMatter") %>% 
+  addTiles() %>%
+  # addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 1,
+  #   color = ~pal(dtData$mean_air_temp_C)
+  #   )
+  # addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 1,
+  #   color = ~qpal(gdp_md_est))
+   addHeatmap(
+    lat = ~decimalLatitude,
+    lng = ~decimalLongitude,
+    intensity = ~mean_air_temp_C,
+    blur = 20, max = 0.05, radius = 15
+  )
+
+
+m
+
+```
+
+```{r temp,warning=F, message=F,echo=F, fig.width= 8.5, fig.height=6}
+
+rc1 <- colorRampPalette(colors = c("orange","white" ,"blue"), space = "Lab")(diff(range(dtData$mean_air_temp_C,na.rm = T)))
+pal <- 
+  colorNumeric(palette = rc1,
+    domain = range(dtData[is.na(mean_air_temp_C) == F,mean_air_temp_C]))
+m<- 
+  leaflet(dtData[is.na(mean_air_temp_C) == F]) %>% 
+  addProviderTiles("CartoDB.DarkMatter") %>%
+    addCircles(
+    lat = ~decimalLatitude,
+    lng = ~decimalLongitude,
+    radius = 1500,
+    opacity = 10,
+    fill = T,
+    popup = paste(
+      paste('<b>Species:</b>',
+            dtData$species),
+      paste('<br><b>Occurence:</b>',
+            as.character(dtData$eventDate)
+            ),
+      paste('<br><b>Daily Temp_degC:</b>',
+            as.character(dtData$mean_air_temp_C)
+            )
+      ),
+    color = ~pal(mean_air_temp_C)
+    # group = 'dtData$species'
+      
+  ) %>%
+  addLegend(position = "bottomright",
+            values = ~mean_air_temp_C, # data frame column for legend
+            opacity = .7, # alpha of the legend
+            pal = pal, # palette declared earlier
+            title = "Daily Temperature degC") %>%
+  addResetMapButton()%>%
+  setView(
+    lng = mean(dtData$decimalLongitude),
+    lat = mean(dtData$decimalLatitude),
+    zoom = 6)
+  # # addTiles() %>%
+  #  addHeatmap(
+  #   lat = ~decimalLatitude,
+  #   lng = ~decimalLongitude,
+  #   intensity = ~avg_radiance,
+  #   blur = 20, max = 0.05, radius = 15
+  # )
+
+
+m
+
+```
+
+```{r radiance,warning=F, message=F,echo=F, fig.width= 8.5, fig.height=6}
+
+rc1 <- 
+  colorRampPalette(
+    colors = c("orange","yellow","white"), space = "Lab")(diff(range(dtData$avg_radiance,na.rm = T))
+                                                        )
+pal <- 
+  colorNumeric(
+    palette = rc1,
+    domain = 
+      range(dtData[is.na(avg_radiance) == F,avg_radiance])
+    )
+m<- 
+  leaflet(dtData[is.na(mean_air_temp_C) == F]) %>% 
+  addProviderTiles("CartoDB.DarkMatter") %>%
+    addCircles(
+    lat = ~decimalLatitude,
+    lng = ~decimalLongitude,
+    radius = ~avg_radiance*1000,
+    opacity = 1000,
+    fill = T,
+    popup = paste(
+      paste('<b>Species:</b>',
+            dtData$species),
+      paste('<br><b>Occurence:</b>',
+            as.character(dtData$eventDate)
+            ),
+      paste('<br><b>Radiance:</b>',
+            as.character(dtData$avg_radiance)
+            )
+      ),
+    color = ~pal(avg_radiance)
+    # group = 'dtData$species'
+      
+  ) %>%
+  addLegend(position = "bottomright",
+            values = ~avg_radiance, # data frame column for legend
+            opacity = .7, # alpha of the legend
+            pal = pal, # palette declared earlier
+            title = "Radiance") %>%
+  addResetMapButton()%>%
+  setView(
+    lng = mean(dtData$decimalLongitude),
+    lat = mean(dtData$decimalLatitude),
+    zoom = 6)
+  # # addTiles() %>%
+  #  addHeatmap(
+  #   lat = ~decimalLatitude,
+  #   lng = ~decimalLongitude,
+  #   intensity = ~avg_radiance,
+  #   blur = 20, max = 0.05, radius = 15
+  # )
+
+
+m
+
+```
+
+### Stamen 

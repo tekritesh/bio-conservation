@@ -92,17 +92,20 @@ if(T){
   # Cleaning/subsetting the datasets, standardizing some names
   
   # dtRawSpecies<-dtRawSpecies[complete.cases(dtRawSpecies)]
-  
+  # dtRawSpecies<-fread("/home/ritesh/Desktop/BZ.csv")
+  # dtRawClimate<-fread("/home/ritesh/Desktop/BZ_Climate.csv")
+  # 
   dtSpecies<- 
     dtRawSpecies[,
                  list(
                    species,
                    speciesKey,
+                   scientificName,
                    
-                   lat_deg = decimalLatitude,
-                   lon_deg = decimalLongitude,
-                   gps_error_m = coordinateUncertaintyInMeters,
-                   stateProvince,
+                   decimalLatitude,
+                   decimalLongitude,
+                   coordinateUncertaintyInMeters,
+                   # stateProvince,
                    countryCode,
                    
                    year,
@@ -128,12 +131,18 @@ if(T){
   dtClimate<- 
     dtRawClimate[,
                  list(
-                   mean_air_temp_C = mean(t2m,na.rm = T)
+                   altitude = mean(alt,na.rm = T),
+                   mean_air_temp_C = mean(t2m,na.rm = T),
+                   mean_dew_point = mean(dpt2m,na.rm = T),
+                   wind_speed_mps = mean(ws,na.rm = T),
+                   wind_direction_deg = mean(wd,na.rm = T),
+                   sea_level_pressure_hPa = mean(slp,na.rm = T),
+                   visibility_m = mean(visibility,na.rm = T)
                  ),
                  list(
                    station_name,
-                   lat_deg = round(lat,2),
-                   lon_deg = round(lon,2),
+                   decimalLatitude = round(lat,2),
+                   decimalLongitude = round(lon,2),
                    year,
                    month,
                    day
@@ -149,20 +158,21 @@ if(T){
         function(iRow){
           # iRow = 7
           
-          dtUniqueStations<- dtClimate[, .N, list( station_name, lat_deg, lon_deg)]
+          dtUniqueStations<- dtClimate[, .N, list( station_name, decimalLatitude, decimalLongitude)]
           dtTemp<-dtSpecies[iRow]
+          # unique_names <- unique(colnames(dtTemp))
+          # dtTemp <- dtTemp[unique_names]
           
-          
-          iLat_deg = dtTemp[,lat_deg]
-          iLon_deg = dtTemp[,lon_deg]
+          iLat_deg = dtTemp[,decimalLatitude]
+          iLon_deg = dtTemp[,decimalLongitude]
           
           dtUniqueStations[,
                            distance_m := 
                              dtHaversine(
                                lat_from = iLat_deg,
                                lon_from = iLon_deg,
-                               lat_to = lat_deg,
-                               lon_to = lon_deg
+                               lat_to = decimalLatitude,
+                               lon_to = decimalLongitude
                              )                 
           ]
           
@@ -188,40 +198,48 @@ if(T){
           
           setorder(dtNearestStation, delta_days)
           
-          
+          dtNearestStation<-dtNearestStation[1]
             
           
-          iTemp<- 
-            dtNearestStation[ delta_days == min(delta_days,na.rm = T), mean_air_temp_C ]
+          # iTemp<- 
+            # dtNearestStation[ delta_days == min(delta_days,na.rm = T), mean_air_temp_C ]
           
+          dtTemp[,closest_station:= dtNearestStation$station_name ]
           
+          # setnames(dtNearestStation,"station_name","closest_station")
+          
+          dtTemp<-
+            merge(
+              dtTemp,
+              dtNearestStation[,
+                               list(
+                                 closest_station = station_name,
+                                 station_lat_deg =decimalLatitude,
+                                 station_lon_deg =decimalLongitude,
+                                 
+                                 altitude,
+                                 mean_air_temp_C,
+                                 mean_dew_point,
+                                 wind_speed_mps,
+                                 wind_direction_deg,
+                                 sea_level_pressure_hPa,
+                                 visibility_m,
+                                 last_temp_recorded_days = delta_days
+                               )
+                               ],
+              by = 
+                'closest_station',
+              all = T
+            )
           
           # if(length(iTemp)> 1){
             cat(
               "Row:",iRow,
-              " Temp:",iTemp,
-              " meanTemp:", mean(iTemp),
-              "days:",dtNearestStation[ delta_days == min(delta_days,na.rm = T),(delta_days) ],
+              # " Temp:",iTemp,
+              # " meanTemp:", mean(iTemp),
+              # "days:",dtNearestStation[ delta_days == min(delta_days,na.rm = T),(delta_days) ],
               "\n"
             )  
-          # }
-          
-          # if(is.nan(iTemp)){
-          #   
-          #   cat(
-          #     "Row:",iRow,
-          #     "Needed:",dtTemp[, year],
-          #     "\n"
-          #   )  
-          #   
-          # }
-          
-          dtTemp[, last_temp_recorded_days:= dtNearestStation[ delta_days == min(delta_days,na.rm = T), mean(delta_days) ]]
-          dtTemp[,closest_station := dtNearestStation[1, station_name] ]
-          dtTemp[,distance_from_closest_station_km := distanceFromClosestStation_m/1000]
-          dtTemp[,station_lat_deg := dtNearestStation[1, lat_deg] ]
-          dtTemp[,station_lon_deg := dtNearestStation[1, lon_deg] ]
-          dtTemp[,mean_air_temp_C := mean(iTemp)]
           
           return(dtTemp)
           
