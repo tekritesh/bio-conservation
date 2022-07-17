@@ -3,6 +3,7 @@ from gbif import climate
 from gbif import human_interference
 from gbif import species
 from gbif import land_cover
+from gbif import soil_data
 import logging
 
 def test_version():
@@ -44,6 +45,16 @@ def test_land_cover_api():
         start_date='2022-01-01',
         end_date='2022-06-01')
     assert data == 'grass'
+
+def test_soil_data_api():
+    inst = soil_data.SoilDataParser()
+    data = inst.get_soil_data(
+        lat_deg=52.33428,
+        lon_deg=1.544288,
+        country="GB")
+
+    assert data["phh2o"] == 0.0
+    assert data["clay"] == 0.0
 
 
 
