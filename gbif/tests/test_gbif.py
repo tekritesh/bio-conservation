@@ -2,6 +2,7 @@ from gbif import __version__
 from gbif import climate
 from gbif import human_interference
 from gbif import species
+from gbif import land_cover
 import logging
 
 def test_version():
@@ -34,6 +35,15 @@ def test_species_api():
         country="GB"
         )
     assert data['key'].values[0] == 3436650793
+
+def test_land_cover_api():
+    inst = land_cover.LandCover()
+    data= inst.get_land_label(
+        lat_deg=52.33428,
+        lon_deg=4.544288,
+        start_date='2022-01-01',
+        end_date='2022-06-01')
+    assert data == 'grass'
 
 
 
