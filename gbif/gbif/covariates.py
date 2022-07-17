@@ -45,18 +45,20 @@ class GBIF_COVARIATES():
                                                                             lon=x['decimalLongitude']),
                                             axis=1)
 
-        return self.df_species[['decimalLatitude', 'decimalLongitude', 
-        'countryCode', 'eventDate',  'avg_radiance', 'avg_deg_urban', 'scientificName']].copy()
+        # return self.df_species[['decimalLatitude', 'decimalLongitude', 
+        # 'countryCode', 'eventDate',  'avg_radiance', 'avg_deg_urban', 'scientificName']].copy()
+        return self.df_species
 
     def __wrapper_climate(self):
-        self.df_species['tavg'] = self.df_species[['decimalLatitude',
+        self.df_species[['tavg', 'tmin', 'tmax', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun' 
+        ]] = self.df_species[['decimalLatitude',
                                         'decimalLongitude',
                                         'date']].\
                                         apply(lambda x: self.inst_climate.get_interpolated_climate_data(lat_deg= x.decimalLatitude,
                                                                             lon_deg=x.decimalLongitude,
                                                                         start_date= x.date,
                                                                         end_date= x.date),
-                                            axis=1)
+                                            axis=1, result_type="expand")
         
 
         return self.df_species
