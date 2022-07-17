@@ -5,14 +5,13 @@ import pandas as pd
 import numpy as np
 import pygbif
 # from pygbif import occurences as occ
-import logging
+from gbif import utils
 
 
 class Occurence():
 
-    def __init__(self, log_level = logging.INFO):
-        self.log = logging.getLogger("climate-logger")
-        self.log.setLevel(log_level)
+    def __init__(self):
+        pass
     
     def get_occurrences(self,eventDate, country, offset = 0):
         """function to get the occurrences from gbif. max rows in one call is 300; we use a loop
@@ -21,6 +20,7 @@ class Occurence():
             country (str): 2 digit ISO country code
             offset (int): offset parameter to loop through occurrences in gbif
         """
+        utils.logger.info("Getting Occurence Data for Date:%s and Country: %s" %(eventDate,country))
         cols_list = ['key','datasetKey','publishingCountry', 'protocol','lastCrawled','lastParsed',
                     'crawlId','basisOfRecord','occurrenceStatus','taxonKey','kingdomKey','phylumKey',
                     'classKey','orderKey','familyKey', 'genusKey','speciesKey','acceptedTaxonKey',
@@ -38,5 +38,7 @@ class Occurence():
             offset += batch_size
             output_rows = temp_df.shape[0]
             out_df = pd.concat([out_df,temp_df])
+            utils.logger.debug("Received Data from GBIF backend: %d" %(len(temp_df.index)))
         #out_df[cols_list].to_csv("test_data.csv", index=False)
+        utils.logger.info("Total Data from GBIF backend: %d" %(len(out_df.index)))
         return out_df[cols_list]

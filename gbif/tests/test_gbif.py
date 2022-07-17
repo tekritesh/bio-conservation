@@ -4,13 +4,14 @@ from gbif import human_interference
 from gbif import species
 from gbif import land_cover
 from gbif import soil_data
-import logging
+from gbif import utils 
 
 def test_version():
     assert __version__ == '0.1.0'
 
 def test_climate_api():
-    inst = climate.GetClimateData(logging.INFO)
+    utils.logger.info("Testing Climate API")
+    inst = climate.GetClimateData()
     df = inst.get_interpolated_climate_data(
         lat_deg=52.33428,
         lon_deg=4.544288,
@@ -21,6 +22,7 @@ def test_climate_api():
     assert df['tmax'].values[0] == 11.4
 
 def test_human_interferance_api():
+    utils.logger.info("Testing Human Interference API")
     inst = human_interference.HumanInterference()
     radiance = inst.get_avg_radiance(
         lat=52.33428,
@@ -38,6 +40,7 @@ def test_species_api():
     assert data['key'].values[0] == 3436650793
 
 def test_land_cover_api():
+    utils.logger.info("Testing Land Cover API")
     inst = land_cover.LandCover()
     data= inst.get_land_label(
         lat_deg=52.33428,
@@ -47,6 +50,7 @@ def test_land_cover_api():
     assert data == 'grass'
 
 def test_soil_data_api():
+    utils.logger.info("Testing Soil Data API")
     inst = soil_data.SoilDataParser()
     data = inst.get_soil_data(
         lat_deg=52.33428,

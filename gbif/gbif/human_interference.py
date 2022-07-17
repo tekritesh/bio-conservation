@@ -4,6 +4,7 @@
 import pandas as pd
 import ee
 import numpy as np
+from gbif import utils
 
 class HumanInterference():
     """Class to initiliaze google earth engine
@@ -11,9 +12,13 @@ class HumanInterference():
     and human settlement information
     """
     def __init__(self):
+        
         try:
+            
+            utils.logger.info("Init Earth Engine")
             ee.Initialize()
         except Exception as e:
+            utils.logger.info("Error in Init Earth Engine. Trying Again...")
             ee.Authenticate()
             ee.Initialize()
         self.ghsl = ee.ImageCollection('JRC/GHSL/P2016/SMOD_POP_GLOBE_V1').\
@@ -28,6 +33,8 @@ class HumanInterference():
         scale: pixel scale value
         buffer (int): value in meters of radius around center lat lon
         """
+
+        utils.logger.debug("Getting Radiance for [%f,%f] for %s" %(lat,lon,date))
         yy = date.split('-')[0] 
         mm = date.split('-')[1] 
         start = yy + '-' + mm + '-01' ##get data for the month
@@ -52,6 +59,8 @@ class HumanInterference():
         scale: pixel scale value
         buffer (int): value in meters of radius around center lat lon
         """
+        utils.logger.debug("Getting Deg Urban for [%f,%f]" %(lat,lon))
+
         aoi = ee.Geometry.Point([lon, lat]).buffer(buffer)
         ghsl_clipped = self.ghsl.clip(aoi)
         

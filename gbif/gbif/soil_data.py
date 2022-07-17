@@ -4,7 +4,8 @@ from PIL import Image
 import numpy as np
 from math import cos, pi
 import pandas as pd
-import logging
+from gbif import utils
+
 
 
 class SoilDataParser:
@@ -21,9 +22,8 @@ class SoilDataParser:
                                       'ocd': 10
                                       }
 
-    def __init__(self, log_level=logging.INFO):
-        self.log = logging.getLogger("soil_cover-logger")
-        self.log.setLevel(log_level)
+    def __init__(self):
+        
         self.wcs = {}
         self.projection_epsg=0
         
@@ -70,13 +70,14 @@ class SoilDataParser:
         # return subsets
 
     def get_soil_data(self,lat_deg,lon_deg,country):
-        self.set_wcs()
-        self.log.info(self.wcs)
-        self.get_projection_epsg(country)
-        self.log.info(self.projection_epsg)
-        self.get_bounding_box(lat_deg=lat_deg, lon_deg=lon_deg)
-        self.log.info(self.subsets)
 
+        utils.logger.info("Getting Soil Data for [%f,%f, %s]" %(lat_deg,lon_deg, country))
+        
+        self.set_wcs()
+        self.get_projection_epsg(country)
+        self.get_bounding_box(lat_deg=lat_deg, lon_deg=lon_deg)
+        
+        utils.logger.debug('Bounding Box', self.subsets)
 
         soil_covariates = {}
         for datatype, conversion_factor in self.soil_data_dict_with_conversion.items():
@@ -99,29 +100,6 @@ class SoilDataParser:
 
             soil_covariates[datatype] = median_value
         return soil_covariates
-
-    # def get_soil_covaraites_for_gbif_data(self):
-    #     gbif_data = self.get_gbif_data()
-    #     wcs = self.set_wcs()
-    #     all_data_list = []
-
-    #     for index, row in gbif_data.iterrows():
-    #         latitude = row['decimalLatitude']
-    #         longitude = row['decimalLongitude']
-    #         projection_epsg = self.get_projection_epsg(row['countryCode'])
-    #         subsets = self.get_bounding_box(latitude, longitude, projection_epsg)
-    #         soil_covariates = self.get_soil_data(wcs, subsets, projection_epsg)
-
-    #         soil_covariates['decimalLatitude'] = latitude
-    #         soil_covariates['decimalLongitude'] = longitude
-    #         soil_covariates['eventDate'] = row['eventDate']
-    #         all_data_list.append(pd.DataFrame(soil_covariates, index=[index]))
-    #     return all_data_list
-
-
-# all_data_list = SoilDataParser().get_soil_covaraites_for_gbif_data()
-# all_data = pd.concat[all_data_list]
-# all_data.to_csv('soil_data.csv')
 
 
 

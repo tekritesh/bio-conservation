@@ -1,7 +1,7 @@
 import ee
 import geemap
 import pandas as pd
-import logging
+from gbif import utils
 
 
 # startDate = '2021-01-01'
@@ -14,14 +14,13 @@ import logging
 
 #all_data = all_data.iloc[0:5]
 class LandCover():
-    def __init__(self, log_level=logging.INFO):
-        self.log = logging.getLogger("land_cover-logger")
-        self.log.setLevel(log_level)
+    def __init__(self):
+        pass
     
     def get_land_label(self, lat_deg, lon_deg, start_date, end_date):
 
         try:
-            self.log.debug("")
+            utils.logger.info("Getting Land Label for [%f,%f] for [%s,%s]" %(lat_deg,lon_deg,start_date,end_date))
             ee.Initialize()
             geometry = ee.Geometry.Point([lon_deg, lat_deg])
             dw = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1').filterDate(start_date, end_date).filterBounds(geometry)
@@ -31,7 +30,7 @@ class LandCover():
             label_type = dwImage.getInfo()['bands'][label_index]['id']
 
         except Exception as e:
-            self.log.error(e)
+            utils.logger.error(e)
             label_type = ""
         
         return label_type
