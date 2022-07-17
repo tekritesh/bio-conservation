@@ -50,6 +50,9 @@ class GBIF_COVARIATES():
         return self.df_species
 
     def __wrapper_climate(self):
+        if 'date' not in self.df_species.columns:
+            self.df_species['date'] = self.df_species['eventDate'].astype(str).str[:10]
+
         self.df_species[['tavg', 'tmin', 'tmax', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun' 
         ]] = self.df_species[['decimalLatitude',
                                         'decimalLongitude',
@@ -64,13 +67,14 @@ class GBIF_COVARIATES():
         return self.df_species
 
 
-    def get_gbif_covariates(self, event_date, country):
+    def get_gbif_covariates(self, event_date, country, test=False):
         
         self.df_species = self.inst_species.get_occurrences(
             eventDate=event_date,
-            country=country)
+            country=country,
+            test=True)
 
-        self.df_species= self.__wrapper_human_interference()
+        # self.df_species= self.__wrapper_human_interference()
 
         self.df_species = self.__wrapper_climate()
 

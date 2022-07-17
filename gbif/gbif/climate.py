@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from meteostat import Point, Daily
 from datetime import datetime
-#from gbif import utils
+from gbif import utils
 
 
 class GetClimateData():
@@ -13,7 +13,6 @@ class GetClimateData():
     """
     def __init__(self):
         pass
-        # utils.logger.setLevel(log_level)
 
     def get_interpolated_climate_data(self,lat_deg, lon_deg,start_date, end_date, altitude=0 ):
         """Function to Get Interpolated climate data for lat,lon,altitude for a given date
@@ -30,16 +29,16 @@ class GetClimateData():
 
         location = Point(lat_deg, lon_deg, altitude)
 
-        #utils.logger.info("Getting climate data for Lat,Log:[%f,%f] for dates:[%s, %s]" % (lat_deg, lon_deg, start_date, end_date))
+        utils.logger.debug("Getting climate data for Lat,Log:[%f,%f] for dates:[%s, %s]" % (lat_deg, lon_deg, start_date, end_date))
         column_names = ['tavg', 'tmin', 'tmax', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun' ]
         try:
             data = Daily(location, start_date, end_date)
             data = data.fetch().reset_index()
             if data.shape[0] < 1:
                 data = pd.DataFrame([[np.nan]*len(column_names)],columns = column_names)
-            #utils.logger.info("Recieved Data Points: %d" %(len(data.index)))
+            utils.logger.debug("Recieved Data Points: %d" %(len(data.index)))
         except Exception as e:
-            #utils.logger.error(e)
+            utils.logger.error(e)
             data = pd.DataFrame([[np.nan]*len(column_names)],columns = column_names)
             
         return data.loc[0,'tavg'], data.loc[0,'tmin'], data.loc[0,'tmax'], data.loc[0,'prcp'], \
