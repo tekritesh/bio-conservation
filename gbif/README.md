@@ -42,8 +42,37 @@ poetry env info
 - Enter Interpreter Path
 - Use the path as per ```poetry env info``` to add your ``venv`` to vs code
 
+#### Package Contents
+
+- ***Covariates Data Query API***
+- *GBIF Occurence Data Query API*
+- *Human Interference Data Query API*
+- *Soil Data Query API*
+- *Land Cover Data Query API*
+- *Climate Data Query API*
+
+#### Folder Structure
+
+- ~/gbif  : Contains all the API modules
+  - covriates.py
+  - human_interference.py
+  - land_cover.py
+  - soil_data.py
+  - species.py
+  - climate.py
+
+- ~/tests : Contains **Unit Tests** for Individual APIs
+  - test_gbif.py  
+- ~/dist  : Contains *.whl* and *.tar* for our package 
+realease
+  - gbif_[version]_.tar.gz
+  - gbif_[version]_.whl
+
+
 #### Writing your function
+
 To be added
 
 #### Publish this package
+
 To be added

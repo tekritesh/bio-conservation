@@ -28,28 +28,20 @@ class SoilDataParser:
         self.projection_epsg=0
         
 
-    def set_wcs(self):
+    def __set_wcs(self):
         for datatype, conversion_factor in self.soil_data_dict_with_conversion.items():
             self.wcs[datatype] = WebCoverageService(f'http://maps.isric.org/mapserv?map=/map/{datatype}.map',
                                      version='2.0.1')
         # return wcs
 
-    def get_projection_epsg(self,country):
+    def __get_projection_epsg(self,country):
         if country == 'BR':
             self.projection_epsg = 29101
         elif country == 'GB':
             self.projection_epsg =  27700
 
-    # def get_gbif_data(self):
-    #     brazil_data = pd.read_csv('bquxjob_2c525673_181e4342f32.csv')
-    #     uk_data = pd.read_csv('bquxjob_39d5dfa3_181e432946c.csv')
 
-    #     gbif_data = pd.concat([brazil_data, uk_data])
-    #     gbif_data = gbif_data.reset_index(drop=True)
-
-    #     return gbif_data
-
-    def get_bounding_box(self, lat_deg, lon_deg):
+    def __get_bounding_box(self, lat_deg, lon_deg):
         r_earth = 6371000.0
         displacement = 250
         lat_deg_max = lat_deg + (displacement / r_earth) * (180 / pi)
@@ -71,35 +63,42 @@ class SoilDataParser:
 
     def get_soil_data(self,lat_deg,lon_deg,country):
 
-        utils.logger.info("Getting Soil Data for [%f,%f, %s]" %(lat_deg,lon_deg, country))
+        try:
+            utils.logger.debug("Getting Soil Data for [%f,%f, %s]" %(lat_deg,lon_deg, country))
+            
+            self.__set_wcs()
+            self.__get_projection_epsg(country)
+            self.__get_bounding_box(lat_deg=lat_deg, lon_deg=lon_deg)
+            
+            utils.logger.debug('Bounding Box', self.subsets)
+
+            soil_covariates = {}
+            for datatype, conversion_factor in self.soil_data_dict_with_conversion.items():
+                cov_id = f'{datatype}_0-5cm_mean'
+                crs = f"http://www.opengis.net/def/crs/EPSG/0/{self.projection_epsg}"
+
+                response = self.wcs[datatype].getCoverage(
+                    identifier=[cov_id],
+                    crs=crs,
+                    subsets=self.subsets,
+                    format='GEOTIFF_INT16')
+
+                with open('test.tif', 'wb') as file:
+                    file.write(response.read())
+
+                im = Image.open('test.tif')
+
+                imarray = np.array(im)
+                median_value = np.median(imarray) / conversion_factor
+
+                soil_covariates[datatype] = median_value
+            return soil_covariates.loc[0,'phh2o'],soil_covariates.loc[0,'clay']
         
-        self.set_wcs()
-        self.get_projection_epsg(country)
-        self.get_bounding_box(lat_deg=lat_deg, lon_deg=lon_deg)
-        
-        utils.logger.debug('Bounding Box', self.subsets)
+        except Exception as e:
+            utils.logger.error(e)
+            return -1,-1
 
-        soil_covariates = {}
-        for datatype, conversion_factor in self.soil_data_dict_with_conversion.items():
-            cov_id = f'{datatype}_0-5cm_mean'
-            crs = f"http://www.opengis.net/def/crs/EPSG/0/{self.projection_epsg}"
-
-            response = self.wcs[datatype].getCoverage(
-                identifier=[cov_id],
-                crs=crs,
-                subsets=self.subsets,
-                format='GEOTIFF_INT16')
-
-            with open('test.tif', 'wb') as file:
-                file.write(response.read())
-
-            im = Image.open('test.tif')
-
-            imarray = np.array(im)
-            median_value = np.median(imarray) / conversion_factor
-
-            soil_covariates[datatype] = median_value
-        return soil_covariates
+            
 
 
 

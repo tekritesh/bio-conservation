@@ -32,17 +32,20 @@ class Occurence():
         batch_size = 300 #max rows outputted by pygbif client
         output_rows = batch_size
         out_df = pd.DataFrame()
-        if test == False:
-            while output_rows >= batch_size:
-                temp_df = pd.DataFrame(pygbif.occurrences.search(eventDate=eventDate, country=country,
-                                                offset=offset, hasCoordinate=True)['results'])
-                offset += batch_size
-                output_rows = temp_df.shape[0]
-                out_df = pd.concat([out_df,temp_df])
-                utils.logger.debug("Received Data from GBIF backend: %d" %(len(temp_df.index)))
-        elif test == True:
-            out_df = pd.DataFrame(pygbif.occurrences.search(eventDate=eventDate, country=country,
-                                                offset=offset, hasCoordinate=True)['results'])
+        try :
+            if test == False:
+                while output_rows >= batch_size:
+                    temp_df = pd.DataFrame(pygbif.occurrences.search(eventDate=eventDate, country=country,
+                                                    offset=offset, hasCoordinate=True)['results'])
+                    offset += batch_size
+                    output_rows = temp_df.shape[0]
+                    out_df = pd.concat([out_df,temp_df])
+                    utils.logger.debug("Received Data from GBIF backend: %d" %(len(temp_df.index)))
+            elif test == True:
+                out_df = pd.DataFrame(pygbif.occurrences.search(eventDate=eventDate, country=country,
+                                                    offset=offset, hasCoordinate=True)['results'])
+        except Exception as e:
+            utils.logger.error(e)
 
         #out_df[cols_list].to_csv("test_data.csv", index=False)
         utils.logger.info("Total Data from GBIF backend: %d" %(len(out_df.index)))

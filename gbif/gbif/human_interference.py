@@ -34,23 +34,30 @@ class HumanInterference():
         buffer (int): value in meters of radius around center lat lon
         """
 
-        utils.logger.debug("Getting Radiance for [%f,%f] for %s" %(lat,lon,date))
-        yy = date.split('-')[0] 
-        mm = date.split('-')[1] 
-        start = yy + '-' + mm + '-01' ##get data for the month
-        
-        viirs = ee.ImageCollection("NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG").\
-                        filterDate(start).select('avg_rad').median()
+        try:
+            utils.logger.debug("Getting Radiance for [%f,%f] for %s" %(lat,lon,date))
 
-        aoi = ee.Geometry.Point([lon, lat]).buffer(buffer)
-        viirs_clipped = viirs.clip(aoi)
+            yy = date.split('-')[0] 
+            mm = date.split('-')[1] 
+            start = yy + '-' + mm + '-01' ##get data for the month
+            
+            viirs = ee.ImageCollection("NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG").\
+                            filterDate(start).select('avg_rad').median()
+
+            aoi = ee.Geometry.Point([lon, lat]).buffer(buffer)
+            viirs_clipped = viirs.clip(aoi)
+            
+            avg_rad = viirs_clipped.reduceRegion(reducer=ee.Reducer.mean(),
+                                            geometry = None,
+                                            scale=scale,
+                                            maxPixels=1e9).get('avg_rad')
+            return avg_rad.getInfo()
         
-        avg_rad = viirs_clipped.reduceRegion(reducer=ee.Reducer.mean(),
-                                        geometry = None,
-                                        scale=scale,
-                                        maxPixels=1e9).get('avg_rad')
+        except Exception as e:
+            utils.logger.error(e)
+            return -1
+            
         
-        return avg_rad.getInfo()
 
     def get_avg_deg_urban(self, lat, lon, buffer=10000, scale=100):
         """
@@ -59,14 +66,18 @@ class HumanInterference():
         scale: pixel scale value
         buffer (int): value in meters of radius around center lat lon
         """
-        utils.logger.debug("Getting Deg Urban for [%f,%f]" %(lat,lon))
+        try:
+            utils.logger.debug("Getting Deg Urban for [%f,%f]" %(lat,lon))
 
-        aoi = ee.Geometry.Point([lon, lat]).buffer(buffer)
-        ghsl_clipped = self.ghsl.clip(aoi)
-        
-        smod_code = ghsl_clipped.reduceRegion(reducer=ee.Reducer.mean(),
-                                        geometry = None,
-                                        scale=scale,
-                                        maxPixels=1e9).get('smod_code')
-        
-        return smod_code.getInfo()
+            aoi = ee.Geometry.Point([lon, lat]).buffer(buffer)
+            ghsl_clipped = self.ghsl.clip(aoi)
+            
+            smod_code = ghsl_clipped.reduceRegion(reducer=ee.Reducer.mean(),
+                                            geometry = None,
+                                            scale=scale,
+                                            maxPixels=1e9).get('smod_code')
+            return smod_code.getInfo()
+        except Exception as e:
+            utils.logger.error(e)
+            return -1
+                
