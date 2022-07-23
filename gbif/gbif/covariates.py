@@ -38,7 +38,7 @@ class GBIF_COVARIATES():
         self.inst_soil = soil_data.SoilDataParser()
         self.inst_land_cover = land_cover.LandCover()
         self.df_species = pd.DataFrame()
-        utils.logger.info("Initialed GBIF Covariate API in" % round(time.time()- self.time_taken,1))
+        utils.logger.info("Initialed GBIF Covariate API in %0.2f" % (round(time.time()- self.time_taken,1)) )
     
     def __wrapper_human_interference(self):
         """
@@ -158,23 +158,23 @@ class GBIF_COVARIATES():
             eventDate=event_date,
             country=country,
             test=True)
-        utils.logger.info("Finished GBIF occurence Data collection in" % round(time.time()- self.time_taken,1))
+        utils.logger.info("Finished GBIF occurence Data collection in %0.2f" % round(time.time()- self.time_taken,1))
         
         self.time_taken = time.time()
         self.df_species= self.__wrapper_human_interference()
-        utils.logger.info("Finished Human Interference Data collection in" % round(time.time()- self.time_taken,1))
+        utils.logger.info("Finished Human Interference Data collection in %0.2f" % round(time.time()- self.time_taken,1))
         
         self.time_taken = time.time()
         self.df_species = self.__wrapper_climate()
-        utils.logger.info("Finished Climate Data collection in" % round(time.time()- self.time_taken,1))
+        utils.logger.info("Finished Climate Data collection in %0.2f" % round(time.time()- self.time_taken,1))
 
         self.time_taken = time.time()
         self.df_species = self.__wrapper_soil_data(country=country)
-        utils.logger.info("Finished Soil Data collection in" % round(time.time()- self.time_taken,1))
+        utils.logger.info("Finished Soil Data collection in %0.2f" % round(time.time()- self.time_taken,1))
 
         self.time_taken = time.time()
         self.df_species = self.__wrapper_land_cover()
-        utils.logger.info("Finished Land Cover Data collection in" % round(time.time()- self.time_taken,1))
+        utils.logger.info("Finished Land Cover Data collection in %0.2f" % round(time.time()- self.time_taken,1))
 
         utils.logger.info("Finished fetching all covariates. Have Fun!")
 
